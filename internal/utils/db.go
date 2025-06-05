@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"sync"
+	"strings"
 
 	"car_db/internal/models"
 )
@@ -49,4 +50,25 @@ func (db *DB) Save(path string) error {
 
 	data, _ := json.MarshalIndent(db, "", "  ")
 	return os.WriteFile(path, data, 0644)
+}
+
+func GetModelByID(id int) models.Model {
+    db := GetDB()
+    for _, m := range db.Models {
+        if m.ModelID == id {
+            return m
+        }
+    }
+    return models.Model{}
+}
+
+func GetModelIDsByBrand(brand string) []int {
+    db := GetDB()
+    var ids []int
+    for _, model := range db.Models {
+        if strings.EqualFold(model.Brand, brand) {
+            ids = append(ids, model.ModelID)
+        }
+    }
+    return ids
 }
