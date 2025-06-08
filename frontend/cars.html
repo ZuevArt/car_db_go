@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Автомобильный каталог</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-image: url('https://wallpaperbat.com/img/70780327-skyline-5120x2880.jpg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            color: #000000; 
+            min-height: 100vh;
+        }
+
+        header {
+            background-color: #007BFF;
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        header h1 {
+            font-size: 1.5rem;
+            margin-bottom: 0;
+        }
+
+        .logout-btn {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            background-color: #fff;
+            color: #007BFF;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        main {
+            padding: 2rem;
+            max-width: 1200px;
+            margin: auto;
+        }
+
+        .filters {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+            background: white;
+            padding: 1rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+
+        .filters select,
+        .filters input {
+            width: 100%;
+            padding: 0.6rem;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .filters button {
+            padding: 0.6rem;
+            background-color: #00bcd4;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .car-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .car-card {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            transition: transform 0.2s ease;
+        }
+
+        .car-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .car-image {
+            width: 100%;
+            height: 180px;
+            background: #ddd;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .car-info {
+            padding: 1rem;
+        }
+
+        .car-info h3 {
+            margin-bottom: 0.5rem;
+            font-size: 1.2rem;
+        }
+
+        .car-info p {
+            font-size: 0.95rem;
+            margin-bottom: 0.3rem;
+        }
+
+        .car-info strong {
+            color: #007BFF;
+        }
+
+        footer {
+            background-color: #007BFF;
+            color: white;
+            text-align: center;
+            padding: 1rem;
+            margin-top: 2rem;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>CarDB — Каталог автомобилей</h1>
+    <div>
+        <a href="/index.html" class="logout-btn">← На главную</a>
+        <a href="/profile.html" class="logout-btn">👤 Профиль</a>
+    </div>
+</header>
+
+<main>
+    <section class="filters">
+        <!-- Бренд и модель -->
+        <select id="brandFilter">
+            <option value="">Все бренды</option>
+        </select>
+
+        <select id="modelFilter" disabled>
+            <option value="">Выберите модель</option>
+        </select>
+
+        <!-- Выпадающие списки -->
+        <select id="bodyTypeFilter">
+            <option value="">Выберите тип кузова</option>
+        </select>
+
+        <select id="driveTypeFilter">
+            <option value="">Выберите привод</option>
+        </select>
+
+        <select id="engineFilter">
+            <option value="">Выберите двигатель</option>
+        </select>
+
+        <select id="transmissionFilter">
+            <option value="">Выберите тип коробки передач</option>
+        </select>
+
+        <!-- Остальные фильтры -->
+        <input type="number" id="yearFilter" placeholder="Год выпуска">
+        <input type="number" id="minPrice" placeholder="Мин. цена">
+        <input type="number" id="maxPrice" placeholder="Макс. цена">
+        <input type="number" id="powerFilter" placeholder="Мощность">
+        <input type="text" id="steerWheelFilter" placeholder="Руль (левый/правый)">
+        
+        <select id="sort">
+            <option value="">Сортировать</option>
+            <option value="price_asc">Цена ↑</option>
+            <option value="price_desc">Цена ↓</option>
+            <option value="year_asc">Год ↑</option>
+            <option value="year_desc">Год ↓</option>
+            <option value="power_asc">Мощность ↑</option>
+            <option value="power_desc">Мощность ↓</option>
+        </select>
+
+        <button onclick="loadCars()">Применить</button>
+    </section>
+
+    <div class="car-grid" id="carsList"></div>
+</main>
+
+<footer>
+    <p>&copy; 2025 CarDB | Учебный проект</p>
+</footer>
+
+<script>
+    window.onload = () => {
+        checkUserRole().then(loadCars);
+        loadBrandsAndModels();
+        loadFilterOptions();
+        
+
+        document.getElementById('brandFilter').addEventListener('change', function () {
+            const selectedBrand = this.value;
+            updateModelOptions(selectedBrand);
+        });
+    };
+
+    let carsData = [];
+    let allModels = [];
+
+    async function checkUserRole() {
+        const res = await fetch("/api/users/me", {
+            headers: {
+                "Authorization": "Bearer " + localStorage.getItem("token")
+            }
+        });
+
+        if (!res.ok) {
+            localStorage.removeItem("token");
+            window.location.href = "/login.html";
+            return;
+        }
+
+        const user = await res.json();
+        localStorage.setItem("user", JSON.stringify(user));
+    }
+
+    async function getCarImageURL(carID) {
+        try {
+            const res = await fetch(`/api/cars/${carID}/images`, {
+                headers: {
+                    'Authorization': 'Bearer ' + localStorage.getItem('token')
+                }
+            });
+
+            if (!res.ok) return null;
+
+            const urls = await res.json();
+            return urls.length > 0 ? urls[0] : null;
+        } catch (err) {
+            console.error("Ошибка при загрузке фото:", err);
+            return null;
+        }
+    }
+
+    // Загружает все модели и формирует список брендов и моделей
+    async function loadBrandsAndModels() {
+        const res = await fetch('/api/models', {
+            headers: {
+                'Authorization': 'Bearer ' + localStorage.getItem('token')
+            }
+        });
+
+        if (!res.ok) return alert("Не удалось загрузить модели");
+
+        const models = await res.json();
+        allModels = models;
+
+        const brandSelect = document.getElementById('brandFilter');
+        const brandsSet = new Set();
+
+        models.forEach(model => {
+            brandsSet.add(model.brand);
+        });
+
+        brandSelect.innerHTML = '<option value="">Все бренды</option>';
+        brandsSet.forEach(brand => {
+            const option = document.createElement('option');
+            option.value = brand.toLowerCase();
+            option.textContent = brand;
+            brandSelect.appendChild(option);
+        });
+    }
+
+    // Обновляет список моделей по выбранному бренду
+    function updateModelOptions(selectedBrand) {
+        const modelSelect = document.getElementById('modelFilter');
+        modelSelect.disabled = !selectedBrand;
+        modelSelect.innerHTML = '<option value="">Все модели</option>';
+
+        if (!selectedBrand) return;
+
+        const filteredModels = allModels.filter(model =>
+            model.brand.toLowerCase() === selectedBrand
+        );
+
+        filteredModels.forEach(model => {
+            const option = document.createElement('option');
+            option.value = model.model_id;
+            option.textContent = model.name;
+            modelSelect.appendChild(option);
+        });
+    }
+
+    let allBodyTypes = [];
+    let allDriveTypes = [];
+    let allEngines = [];
+    let allTransmissions = [];
+
+    async function loadFilterOptions() {
+        const token = localStorage.getItem('token');
+        const base = '/api/';
+
+        async function fetchList(endpoint) {
+            const res = await fetch(base + endpoint, {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            if (!res.ok) return [];
+            return await res.json();
+        }
+
+        allBodyTypes = await fetchList('bodytypes');
+        allDriveTypes = await fetchList('drivetypes');
+        allEngines = await fetchList('engines');
+        allTransmissions = await fetchList('transmissions');
+
+        populateSelect('bodyTypeFilter', allBodyTypes, 'name');
+        populateSelect('driveTypeFilter', allDriveTypes, 'name');
+        populateSelect('engineFilter', allEngines, 'name');
+        populateSelect('transmissionFilter', allTransmissions, 'name');
+    }
+
+    function populateSelect(id, list, labelField) {
+        const select = document.getElementById(id);
+        //select.innerHTML = '<option value="">Все</option>';
+        list.forEach(item => {
+            const option = document.createElement('option');
+            option.value = item[labelField];
+            option.textContent = item[labelField];
+            select.appendChild(option);
+        });
+    }
+
+    // Загрузка автомобилей
+    async function loadCars() {
+        const params = new URLSearchParams();
+
+        const brand = document.getElementById('brandFilter').value.trim().toLowerCase();
+        const model = document.getElementById('modelFilter').value.trim();
+        const bodyType = document.getElementById('bodyTypeFilter').value.trim().toLowerCase();
+        const driveType = document.getElementById('driveTypeFilter').value.trim().toLowerCase();
+        const engine = document.getElementById('engineFilter').value.trim().toLowerCase();
+        const transmission = document.getElementById('transmissionFilter').value.trim().toLowerCase();
+        const year = document.getElementById('yearFilter').value.trim();
+        const minPrice = document.getElementById('minPrice').value.trim();
+        const maxPrice = document.getElementById('maxPrice').value.trim();
+        const power = document.getElementById('powerFilter').value.trim();
+        const steerWheel = document.getElementById('steerWheelFilter').value.trim().toLowerCase();
+        const sort = document.getElementById('sort').value;
+
+        if (brand) params.append('brand', brand);
+        if (model) params.append('model', model);
+        if (bodyType) params.append('body_type', bodyType);
+        if (driveType) params.append('drive_type', driveType);
+        if (engine) params.append('engine', engine);
+        if (transmission) params.append('transmission', transmission);
+        if (year) params.append('year', year);
+        if (minPrice) params.append('min_price', minPrice);
+        if (maxPrice) params.append('max_price', maxPrice);
+        if (power) params.append('power', power);
+        if (steerWheel) params.append('steer_wheel', steerWheel);
+        if (sort) params.append('sort', sort);
+
+        const res = await fetch(`/api/cars?${params}`, {
+            headers: {
+                'Authorization': 'Bearer ' + localStorage.getItem('token')
+            }
+        });
+
+        if (!res.ok) return alert("Не удалось загрузить данные");
+
+        carsData = await res.json();
+        renderCars();
+    }
+
+    async function renderCars() {
+        const container = document.getElementById('carsList');
+        container.innerHTML = '';
+
+        if (carsData.length === 0) {
+            container.innerHTML = '<p>Нет автомобилей, соответствующих вашему запросу.</p>';
+            return;
+        }
+
+        const userRole = JSON.parse(localStorage.getItem('user'))?.role || 'user';
+
+        for (const car of carsData) {
+            const model = allModels.find(m => m.model_id === car.model) || { name: "Модель", brand: "Бренд" };
+            const imageURL = car.image_url || 'https://belkacheli.com/upload/iblock/6f7/lye2yb7y1xr2b8z0cidwt9h7gsxviidp.png';
+
+            // Получаем фото из API или используем заглушку
+            const finalImageURL = await getCarImageURL(car.id) || imageURL;
+
+            const card = document.createElement('div');
+            card.className = 'car-card';
+            card.innerHTML = `
+                <div class="car-image" style="background-image: url('${finalImageURL}')"></div>
+                <div class="car-info">
+                    <h3>${model.brand} ${model.name}</h3>
+                    <p><strong>Год:</strong> ${car.year}</p>
+                    <p><strong>Цена:</strong> ${car.price.toLocaleString()} ₽</p>
+                    <p><strong>Цвет:</strong> ${car.color}</p>
+                    <p><strong>Двигатель:</strong> ${car.engine}</p>
+                    <p><strong>Кузов:</strong> ${car.body_type}</p>
+                </div>
+            `;
+
+            card.addEventListener('click', () => {
+                window.location.href = `/car.html?id=${car.id}`;
+            });
+
+            // Показываем кнопки только для админа
+            if (userRole === 'admin') {
+                const editBtn = document.createElement('button');
+                editBtn.textContent = 'Редактировать';
+                editBtn.style.marginRight = '10px';
+                editBtn.onclick = () => window.location.href = `/edit-car.html?id=${car.id}`;
+                editBtn.style.background = '#00bcd4'; 
+                editBtn.style.color = 'white';
+                editBtn.style.border = 'none';
+                editBtn.style.padding = '10px 20px';
+                editBtn.style.borderRadius = '5px';
+                editBtn.style.cursor = 'pointer';
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.textContent = 'Удалить';
+                deleteBtn.style.background = '#e50914';
+                deleteBtn.style.color = 'white';
+                deleteBtn.style.border = 'none';
+                deleteBtn.style.padding = '10px 20px';
+                deleteBtn.style.borderRadius = '5px';
+                deleteBtn.style.cursor = 'pointer';
+
+                deleteBtn.onclick = async () => {
+                    if (!confirm("Вы уверены, что хотите удалить этот автомобиль?")) return;
+
+                    const res = await fetch(`/api/cars/${car.id}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Authorization': 'Bearer ' + localStorage.getItem('token')
+                        }
+                    });
+
+                    if (!res.ok) {
+                        alert("Не удалось удалить автомобиль");
+                        return;
+                    }
+
+                    alert("Автомобиль удален");
+                    loadCars();
+                };
+
+                const btnContainer = document.createElement('div');
+                btnContainer.style.textAlign = 'center';
+                btnContainer.style.marginTop = '6px';
+                btnContainer.appendChild(editBtn);
+                btnContainer.appendChild(deleteBtn);
+
+                card.appendChild(btnContainer);
+            }
+
+            container.appendChild(card);
+        }
+    }
+</script>
+
+</body>
+</html>

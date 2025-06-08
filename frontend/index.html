@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>CarDB — Автомобильный каталог</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body {
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #fff;
+            background-image: url('https://s1.1zoom.ru/b5050/633/426620-Kycb_3840x2400.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem 2.5rem;
+            flex-wrap: wrap;
+        }
+
+        header h1 {
+            font-size: 2rem;
+            margin-bottom: 0;
+            color: #00bcd4; 
+        }
+
+        .auth-buttons {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .auth-buttons a {
+            display: inline-block;
+            padding: 0.8rem 1.5rem;
+            background-color: #00bcd4;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: background 0.3s ease;
+            cursor: pointer;
+        }
+
+        .auth-buttons a:hover {
+            background-color: #0097a7;
+        }
+
+        main {
+            flex: 1;
+            padding: 4rem 2rem;
+            max-width: 1000px;
+            margin: auto;
+        }
+
+        .hero {
+            text-align: center;
+            max-width: 90%;
+            margin: 0 auto 3rem auto;
+        }
+
+        .hero h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+        }
+
+        .info-section {
+            max-width: 90%;
+            width: 100%;
+            margin: 2rem auto 4rem auto;
+            padding: 2rem;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            backdrop-filter: blur(5px);
+            font-size: 1rem;
+        }
+
+        .info-section h3 {
+            color: #00bcd4;
+            margin-bottom: 0.5rem;
+        }
+
+        .info-section p {
+            margin-bottom: 0.75rem;
+        }
+
+        footer {
+            background-color: rgba(0, 0, 0, 0.7);
+            text-align: center;
+            padding: 1.5rem;
+            font-size: 0.9rem;
+        }
+
+        /* Модальное окно */
+        .modal {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background-color: #fff;
+            color: #333;
+            padding: 2rem;
+            border-radius: 10px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        .modal-content h2 {
+            margin-bottom: 1rem;
+        }
+
+        .modal-content input {
+            width: 100%;
+            padding: 0.7rem;
+            margin-bottom: 1rem;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .modal-content button {
+            width: 100%;
+            padding: 0.7rem;
+            background-color: #00bcd4;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .modal-content button:hover {
+            background-color: #0097a7;
+        }
+
+        .close-btn {
+            float: right;
+            cursor: pointer;
+            font-weight: bold;
+            color: #00bcd4;
+        }
+
+        @media (max-width: 600px) {
+            .hero h2 {
+                font-size: 1.8rem;
+            }
+
+            .hero p,
+            .info-section p {
+                font-size: 1rem;
+            }
+
+            .auth-buttons a {
+                font-size: 1rem;
+                padding: 0.6rem 1.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>CarDB</h1>
+    <div class="auth-buttons">
+        <a id="loginBtn">Войти</a>
+        <a id="registerBtn">Зарегистрироваться</a>
+    </div>
+</header>
+
+<main>
+    <section class="hero">
+        <h2>Добро пожаловать в CarDB</h2>
+        <p>Информационная система управления автомобильным каталогом. Здесь вы можете просматривать, фильтровать и управлять данными о машинах.</p>
+    </section>
+
+    <section class="info-section">
+        <h3>Тема проекта</h3>
+        <p>Разработка информационной системы «Автомобильный каталог» с возможностью добавления, удаления и фильтрации автомобилей.</p>
+
+        <h3>Цель проекта</h3>
+        <p>Создание веб-приложения для удобного хранения данных об автомобилях, реализация аутентификации и авторизации пользователей, поддержка роли администратора.</p>
+
+        <h3>Создано студентами:</h3>
+        <p>Группа: ИКБО-XX-XX</p>
+        <p>ФИО 1: Петров Петр Петрович</p>
+        <p>ФИО 2: Иванов Иван Иванович</p>
+        <p>ФИО 3: Сидоров Сергей Сергеевич</p>
+
+        <h3>Краткое описание</h3>
+        <p>Проект разработан как часть учебного курса по веб-разработке. Backend написан на Go, используется JWT для аутентификации. Фронтенд реализован с помощью HTML и CSS. База данных имитируется через JSON-файл.</p>
+    </section>
+</main>
+
+<footer>
+    <p>&copy; 2025 CarDB | Учебный проект</p>
+</footer>
+
+<!-- Модальное окно для входа -->
+<div class="modal" id="loginModal">
+    <div class="modal-content">
+        <span class="close-btn" onclick="closeLogin()">×</span>
+        <h2>Войти</h2>
+        <form id="loginForm"> <!-- ✔️ Обёртка в форму -->
+            <input type="email" id="loginEmail" placeholder="Email">
+            <input type="password" id="loginPassword" placeholder="Пароль">
+            <button type="submit">Войти</button>
+        </form>
+    </div>
+</div>
+
+<!-- Модальное окно для регистрации -->
+<div class="modal" id="registerModal">
+    <div class="modal-content">
+        <span class="close-btn" onclick="closeRegister()">×</span>
+        <h2>Регистрация</h2>
+        <form id="registerForm"> <!-- ✔️ Обёртка в форму -->
+            <input type="email" id="registerEmail" placeholder="Email">
+            <input type="password" id="registerPassword" placeholder="Пароль">
+            <input type="text" id="adminKey" placeholder="Админ-ключ (не обязательно)">
+            <button type="submit">Зарегистрироваться</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openLogin() {
+        document.getElementById("loginModal").classList.add("active");
+    }
+
+    function closeLogin() {
+        document.getElementById("loginModal").classList.remove("active");
+    }
+
+    function openRegister() {
+        document.getElementById("registerModal").classList.add("active");
+    }
+
+    function closeRegister() {
+        document.getElementById("registerModal").classList.remove("active");
+    }
+
+    document.getElementById("loginBtn").addEventListener("click", openLogin);
+    document.getElementById("registerBtn").addEventListener("click", openRegister);
+
+    document.getElementById("loginForm").addEventListener("submit", async function(e) {
+        e.preventDefault();
+        await submitLogin();
+    });
+
+    document.getElementById("registerForm").addEventListener("submit", async function(e) {
+        e.preventDefault();
+        await submitRegister();
+    });
+
+    async function submitLogin() {
+        const email = document.getElementById("loginEmail").value;
+        const password = document.getElementById("loginPassword").value;
+
+        const res = await fetch("/login", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ email, password })
+        });
+
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok) {
+            alert("Ошибка входа: " + (data.message || "Неверные данные"));
+            return;
+        }
+
+        localStorage.setItem("token", data.token);
+        window.location.href = "/cars.html?login=success";
+    }
+        
+    
+
+    async function submitRegister() {
+        const email = document.getElementById("registerEmail").value.trim();
+        const password = document.getElementById("registerPassword").value.trim();
+        const adminKey = document.getElementById("adminKey").value.trim();
+
+        let url = "/register";
+
+        const admin_key = document.getElementById("adminKey").value.trim();
+        if (admin_key) {
+            url += "?admin_key=" + encodeURIComponent(admin_key);
+        }
+
+        const res = await fetch(url, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                email: document.getElementById("registerEmail").value.trim(),
+                password: document.getElementById("registerPassword").value.trim()
+            })
+        });
+
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok) {
+            alert("Ошибка регистрации: " + (data.message || "Попробуйте ещё раз"));
+            return;
+        }
+
+        alert("Регистрация успешна! Теперь войдите.");
+        closeRegister();
+        openLogin();
+    }
+</script>
+
+</body>
+</html>

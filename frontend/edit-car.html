@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <title>Редактировать автомобиль</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+
+        header {
+            background-color: #007BFF;
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logout-btn {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            background-color: #fff;
+            color: #007BFF;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        main {
+            max-width: 900px;
+            margin: 2rem auto;
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        h2 {
+            margin-bottom: 1.5rem;
+            color: #007BFF;
+            text-align: center;
+        }
+
+        label {
+            display: block;
+            margin-top: 1rem;
+            font-weight: bold;
+        }
+
+        select,
+        input[type="text"],
+        input[type="number"] {
+            width: 100%;
+            padding: 0.6rem;
+            margin-top: 0.3rem;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        button {
+            margin-top: 2rem;
+            padding: 0.7rem;
+            width: 100%;
+            background-color: #00bcd4;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0097a7;
+        }
+
+        .error {
+            color: red;
+            margin-top: 1rem;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>CarDB — Редактирование автомобиля</h1>
+    <a href="/cars.html" class="logout-btn">← К каталогу</a>
+</header>
+
+<main>
+    <h2>Редактировать автомобиль</h2>
+
+    <div class="error" id="error"></div>
+
+    <form id="carForm">
+        <!-- ID -->
+        <label for="id">ID автомобиля</label>
+        <input type="number" id="id" disabled />
+
+        <!-- Модель -->
+        <label for="model">Модель</label>
+        <select id="model"></select>
+
+        <!-- Тип кузова -->
+        <label for="bodyType">Тип кузова</label>
+        <select id="bodyType"></select>
+
+        <!-- Привод -->
+        <label for="driveType">Привод</label>
+        <select id="driveType"></select>
+
+        <!-- Двигатель -->
+        <label for="engine">Двигатель</label>
+        <select id="engine"></select>
+
+        <!-- Трансмиссия -->
+        <label for="transmission">Коробка передач</label>
+        <select id="transmission"></select>
+
+        <!-- Цвет -->
+        <label for="color">Цвет</label>
+        <input type="text" id="color" placeholder="Например: Черный" />
+
+        <!-- Год -->
+        <label for="year">Год выпуска</label>
+        <input type="number" id="year" min="1900" max="2025" />
+
+        <!-- Цена -->
+        <label for="price">Цена (₽)</label>
+        <input type="number" id="price" step="1000" />
+
+        <!-- Мощность -->
+        <label for="power">Мощность (л.с.)</label>
+        <input type="number" id="power" />
+
+        <!-- Руль -->
+        <label for="steerWheel">Положение руля</label>
+        <input type="text" id="steerWheel" placeholder="левый / правый" />
+
+        <button type="submit">Сохранить изменения</button>
+    </form>
+</main>
+
+<script>
+    const token = localStorage.getItem('token');
+    if (!token) window.location.href = '/login.html';
+
+    let allModels = [];
+
+    // Загрузка всех вариантов из API
+    async function loadOptions(endpoint, selector, valueField = 'name') {
+        const res = await fetch(`/api/${endpoint}`, {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+
+        if (!res.ok) return alert("Не удалось загрузить данные");
+
+        const data = await res.json();
+        const select = document.getElementById(selector);
+
+        data.forEach(item => {
+            const option = document.createElement('option');
+            option.value = item[valueField];
+            option.textContent = item[valueField];
+            select.appendChild(option);
+        });
+    }
+
+    // Загрузка текущего авто
+    async function loadCarData(carID) {
+        const res = await fetch(`/api/cars?id=${carID}`, {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+
+        if (!res.ok) return alert("Автомобиль не найден");
+
+        const cars = await res.json();
+        const car = cars[0];
+
+        document.getElementById('id').value = car.id;
+        document.getElementById('color').value = car.color || '';
+        document.getElementById('year').value = car.year || '';
+        document.getElementById('price').value = car.price || '';
+        document.getElementById('power').value = car.power || '';
+        document.getElementById('steerWheel').value = car.steer_wheel || '';
+
+        // Установка выбранного значения в списке
+        document.getElementById('model').value = car.model || '';
+        document.getElementById('bodyType').value = car.body_type || '';
+        document.getElementById('driveType').value = car.drive_type || '';
+        document.getElementById('engine').value = car.engine || '';
+        document.getElementById('transmission').value = car.transmission || '';
+    }
+
+    // Обновление данных
+    async function saveCarData(e) {
+        e.preventDefault();
+
+        const car = {
+            model: parseInt(document.getElementById('model').value),
+            body_type: document.getElementById('bodyType').value,
+            drive_type: document.getElementById('driveType').value,
+            engine: document.getElementById('engine').value,
+            transmission: document.getElementById('transmission').value,
+            color: document.getElementById('color').value,
+            year: parseInt(document.getElementById('year').value),
+            price: parseFloat(document.getElementById('price').value),
+            power: parseInt(document.getElementById('power').value),
+            steer_wheel: document.getElementById('steerWheel').value
+        };
+
+        const carID = document.getElementById('id').value;
+
+        const res = await fetch(`/api/cars/${carID}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify(car)
+        });
+
+        let data;
+        try {
+            data = await res.json();
+        } catch {
+            data = { message: await res.text() };
+        }
+
+        if (!res.ok) {
+            document.getElementById('error').textContent = "Ошибка: " + (data.message || "Не удалось сохранить");
+            return;
+        }
+
+        alert("Изменения успешно сохранены!");
+        window.location.href = `/cars.html`;
+    }
+
+    // Загрузка данных при открытии страницы
+    window.onload = async () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const carID = urlParams.get('id');
+
+        if (!carID) {
+            alert("Не указан ID автомобиля");
+            window.location.href = "/cars.html";
+            return;
+        }
+
+        // Загрузка выпадающих списков
+        await loadOptions('models', 'model', 'model_id');
+        await loadOptions('bodytypes', 'bodyType');
+        await loadOptions('drivetypes', 'driveType');
+        await loadOptions('engines', 'engine');
+        await loadOptions('transmissions', 'transmission');
+
+        // Загрузка данных автомобиля
+        await loadCarData(carID);
+
+        // Подключение формы
+        document.getElementById('carForm').addEventListener('submit', saveCarData);
+    };
+</script>
+
+</body>
+</html>

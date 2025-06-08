@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Профиль пользователя</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: auto;
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 1.5rem;
+            color: #007BFF;
+        }
+
+        label {
+            display: block;
+            margin-top: 1rem;
+            font-weight: bold;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="password"] {
+            width: 100%;
+            padding: 0.6rem;
+            margin-top: 0.3rem;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        button {
+            margin-top: 1.5rem;
+            padding: 0.7rem;
+            width: 100%;
+            background-color: #00bcd4;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0097a7;
+        }
+
+        .error {
+            color: red;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Профиль</h2>
+    
+    <p><strong>Email:</strong> <span id="email"></span></p>
+    <p><strong>Роль:</strong> <span id="role"></span></p>
+
+    <form id="profileForm">
+        <label for="fname">Имя</label>
+        <input type="text" id="fname" name="fname">
+
+        <label for="lname">Фамилия</label>
+        <input type="text" id="lname" name="lname">
+
+        <label for="phone">Телефон</label>
+        <input type="text" id="phone" name="phone">
+
+        <label for="newPassword">Новый пароль</label>
+        <input type="password" id="newPassword" name="newPassword">
+
+        <label for="confirmPassword">Подтвердите пароль</label>
+        <input type="password" id="confirmPassword" name="confirmPassword">
+
+        <div class="error" id="error"></div>
+        <button type="submit">Сохранить изменения</button>
+    </form>
+</div>
+
+<script>
+    const token = localStorage.getItem('token');
+    if (!token) window.location.href = '/login.html';
+
+    async function loadProfile() {
+        const res = await fetch('/api/users/me', {
+            headers: {
+                'Authorization': 'Bearer ' + token
+            }
+        });
+
+        if (!res.ok) {
+            alert("Не удалось загрузить профиль");
+            return;
+        }
+
+        const user = await res.json();
+        document.getElementById('email').textContent = user.email || '—';
+        document.getElementById('role').textContent = user.role || '—';
+        document.getElementById('fname').value = user.f_name || '';
+        document.getElementById('lname').value = user.l_name || '';
+        document.getElementById('phone').value = user.phone || '';
+    }
+
+    async function saveProfile(e) {
+        e.preventDefault();
+
+        const fnameInput = document.getElementById("fname");
+        const fname = fnameInput ? fnameInput.value.trim() : "";   // ✅ Проверяем, что элемент существует
+        const lname = document.getElementById('lname').value.trim();
+        const phone = document.getElementById('phone').value.trim();
+        const newPassword = document.getElementById('newPassword').value.trim();
+        const confirmPassword = document.getElementById('confirmPassword').value.trim();
+
+        const errorDiv = document.getElementById('error');
+        errorDiv.textContent = "";
+
+        if (newPassword !== confirmPassword) {
+            errorDiv.textContent = "Пароли не совпадают";
+            return;
+        }
+
+        const res = await fetch('/api/users/me', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify({
+                f_name: fname,
+                l_name: lname,
+                phone: phone,
+                password: newPassword
+            })
+        });
+
+        let data;
+        try {
+            data = await res.json();
+        } catch {
+            data = { message: await res.text() };
+        }
+
+        if (!res.ok) {
+            errorDiv.textContent = "Ошибка: " + (data.message || "Не удалось сохранить изменения");
+            return;
+        }
+
+        alert("Данные успешно обновлены!");
+        window.location.reload();
+    }
+
+    window.onload = () => {
+        loadProfile();
+        document.getElementById('profileForm').addEventListener('submit', saveProfile);
+    };
+</script>
+
+</body>
+</html>
