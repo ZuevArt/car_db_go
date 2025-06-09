@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <title>Добавить автомобиль</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+            padding: 2rem;
+        }
+
+        header {
+            background-color: #007BFF;
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+        }
+
+        main {
+            max-width: 960px;
+            margin: auto;
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 1.5rem;
+            color: #007BFF;
+        }
+
+        label {
+            display: block;
+            margin-top: 1rem;
+            font-weight: bold;
+        }
+
+        select,
+        input[type="text"],
+        input[type="number"] {
+            width: 100%;
+            padding: 0.6rem;
+            margin-top: 0.3rem;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        button {
+            margin-top: 2rem;
+            padding: 0.7rem;
+            width: 100%;
+            background-color: #00bcd4;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0097a7;
+        }
+
+        .error {
+            color: red;
+            margin-top: 1rem;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>CarDB — Добавление авто</h1>
+    <a href="/cars.html" class="logout-btn">← К списку автомобилей</a>
+</header>
+
+<main>
+    <h2>Добавить новый автомобиль</h2>
+
+    <div class="error" id="error"></div>
+
+    <form id="carForm">
+        <label for="model">Модель</label>
+        <select id="model" required></select>
+
+        <label for="bodyType">Тип кузова</label>
+        <select id="bodyType" required></select>
+
+        <label for="driveType">Привод</label>
+        <select id="driveType" required></select>
+
+        <label for="engine">Двигатель</label>
+        <select id="engine" required></select>
+
+        <label for="transmission">Коробка передач</label>
+        <select id="transmission" required></select>
+
+        <label for="color">Цвет</label>
+        <input type="text" id="color" placeholder="Например: Черный" required />
+
+        <label for="dealer">ID дилера</label>
+        <input type="number" id="dealer" min="1" placeholder="Введите ID дилера" required />
+
+        <label for="zeroToHundred">Разгон до 100 км/ч (сек)</label>
+        <input type="number" id="zeroToHundred" step="0.1" required />
+
+        <label for="numSeats">Число мест</label>
+        <input type="number" id="numSeats" min="1" max="20" required />
+
+        <label for="engineCapacity">Объем двигателя (л)</label>
+        <input type="number" id="engineCapacity" step="0.1" required />
+
+        <label for="year">Год выпуска</label>
+        <input type="number" id="year" min="1900" max="2025" required />
+
+        <label for="price">Цена (₽)</label>
+        <input type="number" id="price" min="0" required />
+
+        <label for="power">Мощность (л.с.)</label>
+        <input type="number" id="power" min="1" required />
+
+        <label for="steerWheel">Положение руля</label>
+        <input type="text" id="steerWheel" placeholder="левый / правый" required />
+
+        <button type="submit">Добавить автомобиль</button>
+    </form>
+</main>
+
+<script>
+    const token = localStorage.getItem("token");
+    if (!token) window.location.href = "/login.html";
+
+    // Проверяем роль пользователя
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (user && user.role !== "admin") {
+        alert("Доступ запрещён");
+        window.location.href = "/cars.html";
+    }
+
+    async function loadOptions(endpoint, selector, valueField = "name") {
+        const res = await fetch(`/api/${endpoint}`, {
+            headers: { "Authorization": "Bearer " + token }
+        });
+        const data = await res.json();
+        const select = document.getElementById(selector);
+
+        data.forEach(item => {
+            const option = document.createElement("option");
+            option.value = item[valueField];
+            option.textContent = item[valueField];
+            select.appendChild(option);
+        });
+    }
+
+    async function loadModels() {
+        const res = await fetch("/api/models", {
+            headers: { "Authorization": "Bearer " + token }
+        });
+        const models = await res.json();
+        const modelSelect = document.getElementById("model");
+
+        models.forEach(model => {
+            const option = document.createElement("option");
+            option.value = model.model_id;
+            option.textContent = `${model.brand} ${model.name}`;
+            modelSelect.appendChild(option);
+        });
+    }
+
+    window.onload = () => {
+        loadModels();
+        loadOptions("bodytypes", "bodyType");
+        loadOptions("drivetypes", "driveType");
+        loadOptions("engines", "engine");
+        loadOptions("transmissions", "transmission");
+    };
+
+    document.getElementById("carForm").addEventListener("submit", async function(e) {
+        e.preventDefault();
+
+        const car = {
+            model: parseInt(document.getElementById("model").value),
+            body_type: document.getElementById("bodyType").value.trim(),
+            drive_type: document.getElementById("driveType").value.trim(),
+            engine: document.getElementById("engine").value.trim(),
+            transmission: document.getElementById("transmission").value.trim(),
+            color: document.getElementById("color").value.trim(),
+            dealer: parseInt(document.getElementById("dealer").value),
+            zero_to_hundred: parseFloat(document.getElementById("zeroToHundred").value),
+            num_seats: parseInt(document.getElementById("numSeats").value),
+            engine_capacity: parseFloat(document.getElementById("engineCapacity").value),
+            year: parseInt(document.getElementById("year").value),
+            price: parseFloat(document.getElementById("price").value),
+            power: parseInt(document.getElementById("power").value),
+            steer_wheel: document.getElementById("steerWheel").value.trim()
+        };
+
+        const errorDiv = document.getElementById("error");
+        errorDiv.textContent = "";
+
+        const res = await fetch("/api/cars", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + token
+            },
+            body: JSON.stringify(car)
+        });
+
+        let data;
+        try {
+            data = await res.json();
+        } catch {
+            data = { message: await res.text() };
+        }
+
+        if (!res.ok) {
+            errorDiv.textContent = "Ошибка: " + (data.message || "Не удалось добавить автомобиль");
+            return;
+        }
+
+        alert("Автомобиль успешно добавлен!");
+        window.location.href = "/cars.html";
+    });
+</script>
+
+</body>
+</html>

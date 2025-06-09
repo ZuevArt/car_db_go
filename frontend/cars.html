@@ -130,7 +130,6 @@
             color: white;
             text-align: center;
             padding: 1rem;
-            margin-top: 2rem;
         }
     </style>
 </head>
@@ -190,13 +189,16 @@
         </select>
 
         <button onclick="loadCars()">Применить</button>
+        <div id="adminActions" style="display: none;">
+            <a href="/add-car.html" class="logout-btn" style="background-color: #00bcd4; color: white;">➕ Добавить авто</a>
+        </div>
     </section>
 
     <div class="car-grid" id="carsList"></div>
 </main>
 
 <footer>
-    <p>&copy; 2025 CarDB | Учебный проект</p>
+    <p>&copy; 2025 CarDB | Учебный проект НИУ ВШЭ МИЭМ</p>
 </footer>
 
 <script>
@@ -210,6 +212,12 @@
             const selectedBrand = this.value;
             updateModelOptions(selectedBrand);
         });
+
+        const user = JSON.parse(localStorage.getItem('user'));
+        const adminActions = document.getElementById('adminActions');
+        if (user && user.role === 'admin') {
+            adminActions.style.display = 'block';
+        }
     };
 
     let carsData = [];
@@ -385,8 +393,11 @@
         container.innerHTML = '';
 
         if (carsData.length === 0) {
-            container.innerHTML = '<p>Нет автомобилей, соответствующих вашему запросу.</p>';
-            return;
+            container.innerHTML = `
+                <div class="no-results">
+                    Автомобилей не найдено
+                </div>
+            `;
         }
 
         const userRole = JSON.parse(localStorage.getItem('user'))?.role || 'user';
