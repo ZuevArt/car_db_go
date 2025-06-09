@@ -13,7 +13,9 @@ import (
 func CreateCar(w http.ResponseWriter, r *http.Request) {
 	var car models.Car
 	if err := utils.ReadJSON(r, &car); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		utils.WriteJSON(w, http.StatusBadRequest, map[string]string{
+			"error": "Invalid request body",
+		})
 		return
 	}
 
